@@ -137,21 +137,19 @@ def generate_rule(script_path, template, package_names, module_names, data_deps,
     local_packages = [p for p in package_names if p in local_import_name_to_dep]
     external_packages = [p for p in package_names if p not in local_import_name_to_dep]
 
-    for package_set in (local_packages, external_packages):     # List local packages first.
-        for package_name in sorted(list(package_set)):
-            if multiple_deps:
-                deps += 2*tab
+    # process mappings
+    local_packages = [local_import_name_to_dep.get(p, p) for p in local_packages]
+    external_packages = [import_name_to_pip_name.get(p, p) for p in external_packages]
 
-            if package_name in local_import_name_to_dep:    # Local package.
-                package_name = local_import_name_to_dep[package_name]
-                deps += '\"' + package_name + '\"'
-            else:   # External/pip installable package.
-                package_name = import_name_to_pip_name.get(package_name, package_name)
-                package_name = 'requirement(\"%s\")' % package_name
-                deps += package_name
+    deps_indent = 2*tab if multiple_deps else ''
+    deps_separator = ',\n' if multiple_deps else ''
+    # List local packages first
+    for package_name in sorted(set(local_packages)):
+        deps += '%s\"%s\"%s' % (deps_indent, package_name, deps_separator)
 
-            if multiple_deps:
-                deps += ',\n'
+    # External/pip installable package.
+    for package_name in sorted(set(external_packages)):
+        deps += '%srequirement(\"%s\")%s' % (deps_indent, package_name, deps_separator)
 
     if multiple_deps:
         deps += tab
@@ -193,7 +191,7 @@ def parse_script_and_generate_rule(script_path, project_root, contains_pre_insta
         script_source = script_file.read()
 
     # Get all imports in the script.
-    package_names, from_imports = get_imports(script_source)
+    package_names, from_imports = get_imports(script_source, script_path, project_root)
     all_imports = package_names + from_imports
 
     # Infer the import type: Is a package, module, or an object being imported.

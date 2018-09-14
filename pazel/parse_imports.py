@@ -11,12 +11,13 @@ from pazel.helpers import contains_python_file
 from pazel.helpers import is_installed
 
 
-def get_imports(script_source):
+def get_imports(script_source, script_path, project_root):
     """Parse imported packages and objects imported from packages.
 
     Args:
         script_source (str): The source code of a Python script.
-
+        script_path (str): Path of the python script.
+        project_root (str): Path to the root of the project.
     Returns:
         packages (list of tuple): List of (package name, None) tuples.
         from_imports (list of tuple): List of (package/module name, some object) tuples. Note that
@@ -30,6 +31,12 @@ def get_imports(script_source):
         # Parse expressions of the form "from X import Y".
         if isinstance(node, ast.ImportFrom):
             module = node.module
+            if node.level > 0:
+                relpath = os.path.relpath(script_path, project_root)
+                module_parts = list(os.path.split(relpath)[:-node.level])
+                if module is not None:
+                    module_parts += module.split('.')
+                module = '.'.join(module_parts)
 
             for name in node.names:
                 from_imports.append((module, name.name))
@@ -105,7 +112,7 @@ def infer_import_type(all_imports, project_root, contains_pre_installed_packages
         if unknown_is_package:
             # Assume that for package //foo, there exists rule //foo:foo.
             # TODO: Relax this assumption.
-            dotted_path += '.%s' % unknown
+            dotted_path += '.__init__'
             modules.append(dotted_path)
             continue
 
@@ -136,7 +143,7 @@ def _in_public_interface(package_path, unknown):
     Returns:
         public (bool): Whether 'unknown' if part of the public interface.
     """
-    public = False
+    if unknown is None: return True
     init_path = os.path.join(package_path, '__init__.py')
 
     # Try parsing the __init__.py file of the package.
@@ -144,18 +151,18 @@ def _in_public_interface(package_path, unknown):
         with open(init_path, 'r') as init_file:
             init_source = init_file.read()
     except IOError:
-        return public
+        return False
 
     try:
         top_node = ast.parse(init_source)
     except SyntaxError:
-        return public
+        return False
 
     for node in top_node.body:
         # Check assigning to __all__.
         if isinstance(node, ast.Assign):
             # The number of variables on the left side should be 1.
-            if len(node.targets) == 1:
+            if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
                 left_side = node.targets[0].id
 
                 if left_side == '__all__':

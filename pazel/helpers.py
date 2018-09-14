@@ -116,7 +116,7 @@ def _is_in_stdlib(module, some_object):
     # Clear PYTHONPATH temporarily and try importing the given module.
     original_sys_path = sys.path
     lib_path = os.path.dirname(traceback.__file__)
-    sys.path = [lib_path]
+    sys.path = [lib_path, os.path.join(lib_path, 'lib-dynload')]
 
     # On Mac, some extra library paths are required.
     if 'darwin' in platform.system().lower():
@@ -129,7 +129,7 @@ def _is_in_stdlib(module, some_object):
     try:
         module = importlib.import_module(module)
 
-        if some_object:
+        if some_object and some_object != '*':
             getattr(module, some_object)
 
         in_stdlib = True
