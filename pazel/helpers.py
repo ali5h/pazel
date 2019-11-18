@@ -22,7 +22,7 @@ def contains_python_file(directory):
         contains_py (bool): Whether the directory contains at least one Python file.
     """
     files = os.listdir(directory)
-    contains_py = any(f.endswith('.py') or f.endswith('.pyc') for f in files)
+    contains_py = any(f.endswith(".py") or f.endswith(".pyc") for f in files)
 
     return contains_py
 
@@ -42,7 +42,7 @@ def get_build_file_path(path):
     else:
         directory = os.path.dirpath(path)
 
-    build_file_path = os.path.join(directory, 'BUILD')
+    build_file_path = os.path.join(directory, "BUILD")
 
     return build_file_path
 
@@ -75,11 +75,12 @@ def is_ignored(script_path, ignored_rules):
         func_call = node.body[0].value
 
         for keyword in func_call.keywords:
-            if keyword.arg == 'srcs':
+            if keyword.arg == "srcs":
                 elements = keyword.value.elts
 
-                assert len(elements) == 1, \
+                assert len(elements) == 1, (
                     "Multiple source files not supported in %s." % ignored_rule
+                )
 
                 if elements[0].s == script_file_name:
                     ignored = True
@@ -105,7 +106,7 @@ def is_python_file(path):
     """
     valid = False
 
-    if os.path.isfile(path) and path.endswith('.py'):
+    if os.path.isfile(path) and path.endswith(".py"):
         valid = True
 
     return valid
@@ -116,12 +117,12 @@ def _is_in_stdlib(module, some_object):
     # Clear PYTHONPATH temporarily and try importing the given module.
     original_sys_path = sys.path
     lib_path = os.path.dirname(traceback.__file__)
-    sys.path = [lib_path, os.path.join(lib_path, 'lib-dynload')]
+    sys.path = [lib_path, os.path.join(lib_path, "lib-dynload")]
 
     # On Mac, some extra library paths are required.
-    if 'darwin' in platform.system().lower():
+    if "darwin" in platform.system().lower():
         for path in original_sys_path:
-            if 'site-packages' not in path:
+            if "site-packages" not in path:
                 sys.path.append(path)
 
     in_stdlib = False
@@ -129,7 +130,7 @@ def _is_in_stdlib(module, some_object):
     try:
         module = importlib.import_module(module)
 
-        if some_object and some_object != '*':
+        if some_object and some_object != "*":
             getattr(module, some_object)
 
         in_stdlib = True
@@ -166,7 +167,7 @@ def is_installed(module, some_object=None, contains_pre_installed_packages=False
             installed = True
         except (ImportError, AttributeError):
             installed = False
-    else:   # If we have a clean install, then check if the module is in the standard library.
+    else:  # If we have a clean install, then check if the module is in the standard library.
         installed = _is_in_stdlib(module, some_object)
 
     return installed
@@ -186,10 +187,10 @@ def parse_enclosed_expression(source, start, opening_token):
     Raises:
         NotImplementedError: If parsing is not implemented for the given opening token.
     """
-    if opening_token == '(':
-        closing_token = ')'
-    elif opening_token == '[':
-        closing_token = ']'
+    if opening_token == "(":
+        closing_token = ")"
+    elif opening_token == "[":
+        closing_token = "]"
     else:
         raise NotImplementedError("No closing token defined for %s." % opening_token)
 

@@ -29,7 +29,7 @@ def _walk_modules(current_dir, modules):
 
     for module in modules:
         # Map e.g. "foo.abc" and "foo.abc.xyz" to "abc" and "abc.xyz", respectively.
-        remaining_module_name = module.replace(current_dir, '').split('.')
+        remaining_module_name = module.replace(current_dir, "").split(".")
 
         is_in_current_dir = len(remaining_module_name) == 1
 
@@ -46,10 +46,11 @@ def _walk_modules(current_dir, modules):
     sorted_subdirs = sorted(list(set(subdirs)))
 
     for subdir in sorted_subdirs:
-        next_dir = current_dir + subdir + '.' if current_dir else subdir + '.'
+        next_dir = current_dir + subdir + "." if current_dir else subdir + "."
         # Consider only modules in the current subdirectory.
-        remaining_modules_in_next_dir = [module for module in remaining_modules if
-                                         next_dir in module]
+        remaining_modules_in_next_dir = [
+            module for module in remaining_modules if next_dir in module
+        ]
 
         for x in _walk_modules(next_dir, remaining_modules_in_next_dir):
             yield x
@@ -68,14 +69,22 @@ def sort_module_names(module_names):
     """
     sorted_module_names = []
 
-    for module_name in _walk_modules('', module_names):
+    for module_name in _walk_modules("", module_names):
         sorted_module_names += module_name
 
     return sorted_module_names
 
 
-def generate_rule(script_path, template, package_names, module_names, data_deps, test_size,
-                  import_name_to_pip_name, local_import_name_to_dep):
+def generate_rule(
+    script_path,
+    template,
+    package_names,
+    module_names,
+    data_deps,
+    test_size,
+    import_name_to_pip_name,
+    local_import_name_to_dep,
+):
     """Generate a Bazel Python rule given the type of the Python file and imports in it.
 
     Args:
@@ -92,9 +101,9 @@ def generate_rule(script_path, template, package_names, module_names, data_deps,
     Returns:
         rule (str): Bazel rule generated for the current Python script.
     """
-    script_name = os.path.basename(script_path).replace('.py', '')
-    deps = ''
-    tab = '    '
+    script_name = os.path.basename(script_path).replace(".py", "")
+    deps = ""
+    tab = "    "
 
     num_deps = len(module_names) + len(package_names)
     multiple_deps = num_deps > 1
@@ -108,30 +117,32 @@ def generate_rule(script_path, template, package_names, module_names, data_deps,
     #   ]
 
     if multiple_deps:
-        deps += '\n'
+        deps += "\n"
 
     for module_name in sort_module_names(list(module_names)):
         # Import from the same directory as the script resides.
-        if '.' not in module_name:
-            module_name = ':' + module_name
+        if "." not in module_name:
+            module_name = ":" + module_name
         else:
             # Format the dotted module name to the Bazel format with slashes.
-            module_name = '//' + module_name.replace('.', '/')
+            module_name = "//" + module_name.replace(".", "/")
 
             # Replace the last slash with :.
-            last_slash_idx = module_name.rfind('/')
-            module_name = module_name[:last_slash_idx] + ':' + module_name[last_slash_idx + 1:]
+            last_slash_idx = module_name.rfind("/")
+            module_name = (
+                module_name[:last_slash_idx] + ":" + module_name[last_slash_idx + 1 :]
+            )
 
         if multiple_deps:
-            deps += 2*tab
+            deps += 2 * tab
 
-        deps += '\"' + module_name + '\"'
+        deps += '"' + module_name + '"'
 
         if multiple_deps:
-            deps += ',\n'
+            deps += ",\n"
 
     # Even if a submodule of a local or external package is required, install the whole package.
-    package_names = set([p.split('.')[0] for p in package_names])
+    package_names = set([p.split(".")[0] for p in package_names])
 
     # Split packages to local and external.
     local_packages = [p for p in package_names if p in local_import_name_to_dep]
@@ -141,24 +152,26 @@ def generate_rule(script_path, template, package_names, module_names, data_deps,
     local_packages = [local_import_name_to_dep.get(p, p) for p in local_packages]
     external_packages = [import_name_to_pip_name.get(p, p) for p in external_packages]
 
-    deps_indent = 2*tab if multiple_deps else ''
-    deps_separator = ',\n' if multiple_deps else ''
+    deps_indent = 2 * tab if multiple_deps else ""
+    deps_separator = ",\n" if multiple_deps else ""
     # List local packages first
     for package_name in sorted(set(local_packages)):
-        deps += '%s\"%s\"%s' % (deps_indent, package_name, deps_separator)
+        deps += '%s"%s"%s' % (deps_indent, package_name, deps_separator)
 
     # External/pip installable package.
     for package_name in sorted(set(external_packages)):
-        deps += '%srequirement(\"%s\")%s' % (deps_indent, package_name, deps_separator)
+        deps += '%srequirement("%s")%s' % (deps_indent, package_name, deps_separator)
 
     if multiple_deps:
         deps += tab
 
     if deps:
-        deps = 'deps = [{deps}],'.format(deps=deps)
+        deps = "deps = [{deps}],".format(deps=deps)
 
-    data = data_deps + ',' if data_deps is not None else ''
-    size = test_size if test_size is not None else 'small'  # If size not given, assume small.
+    data = data_deps + "," if data_deps is not None else ""
+    size = (
+        test_size if test_size is not None else "small"
+    )  # If size not given, assume small.
 
     rule = template.format(name=script_name, deps=deps, data=data, size=size)
     # If e.g. 'data' is missing, then remove blank lines.
@@ -167,9 +180,15 @@ def generate_rule(script_path, template, package_names, module_names, data_deps,
     return rule
 
 
-def parse_script_and_generate_rule(script_path, project_root, contains_pre_installed_packages,
-                                   custom_bazel_rules, custom_import_inference_rules,
-                                   import_name_to_pip_name, local_import_name_to_dep):
+def parse_script_and_generate_rule(
+    script_path,
+    project_root,
+    contains_pre_installed_packages,
+    custom_bazel_rules,
+    custom_import_inference_rules,
+    import_name_to_pip_name,
+    local_import_name_to_dep,
+):
     """Generate Bazel Python rule for a Python script.
 
     Args:
@@ -187,7 +206,7 @@ def parse_script_and_generate_rule(script_path, project_root, contains_pre_insta
     Returns:
         rule (str): Bazel rule generated for the Python script.
     """
-    with open(script_path, 'r') as script_file:
+    with open(script_path, "r") as script_file:
         script_source = script_file.read()
 
     # Get all imports in the script.
@@ -195,12 +214,17 @@ def parse_script_and_generate_rule(script_path, project_root, contains_pre_insta
     all_imports = package_names + from_imports
 
     # Infer the import type: Is a package, module, or an object being imported.
-    package_names, module_names = infer_import_type(all_imports, project_root,
-                                                    contains_pre_installed_packages,
-                                                    custom_import_inference_rules)
+    package_names, module_names = infer_import_type(
+        all_imports,
+        project_root,
+        contains_pre_installed_packages,
+        custom_import_inference_rules,
+    )
 
     # Infer the Bazel rule type for the script.
-    bazel_rule_type = infer_bazel_rule_type(script_path, script_source, custom_bazel_rules)
+    bazel_rule_type = infer_bazel_rule_type(
+        script_path, script_source, custom_bazel_rules
+    )
 
     # Data dependencies or test size cannot be inferred from the script source code currently.
     # Use information in any existing BUILD files.
@@ -208,7 +232,15 @@ def parse_script_and_generate_rule(script_path, project_root, contains_pre_insta
     test_size = find_existing_test_size(script_path, bazel_rule_type)
 
     # Generate the Bazel Python rule based on the gathered information.
-    rule = generate_rule(script_path, bazel_rule_type.template, package_names, module_names,
-                         data_deps, test_size, import_name_to_pip_name, local_import_name_to_dep)
+    rule = generate_rule(
+        script_path,
+        bazel_rule_type.template,
+        package_names,
+        module_names,
+        data_deps,
+        test_size,
+        import_name_to_pip_name,
+        local_import_name_to_dep,
+    )
 
     return rule

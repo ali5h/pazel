@@ -33,10 +33,10 @@ def get_imports(script_source, script_path, project_root):
             module = node.module
             if node.level > 0:
                 relpath = os.path.relpath(script_path, project_root)
-                module_parts = list(os.path.split(relpath)[:-node.level])
+                module_parts = list(os.path.split(relpath)[: -node.level])
                 if module is not None:
-                    module_parts += module.split('.')
-                module = '.'.join(module_parts)
+                    module_parts += module.split(".")
+                module = ".".join(module_parts)
 
             for name in node.names:
                 from_imports.append((module, name.name))
@@ -48,7 +48,9 @@ def get_imports(script_source, script_path, project_root):
     return packages, from_imports
 
 
-def infer_import_type(all_imports, project_root, contains_pre_installed_packages, custom_rules):
+def infer_import_type(
+    all_imports, project_root, contains_pre_installed_packages, custom_rules
+):
     """Infer what is being imported.
 
     Given a list of tuples (package/module, some object) infer whether the first element is a
@@ -77,7 +79,9 @@ def infer_import_type(all_imports, project_root, contains_pre_installed_packages
         custom_rule_matches = False
 
         for inference_rule in custom_rules:
-            new_packages, new_modules = inference_rule.holds(project_root, base, unknown)
+            new_packages, new_modules = inference_rule.holds(
+                project_root, base, unknown
+            )
 
             # If the rule holds, then add to the list of packages and/or modules.
             if new_packages is not None:
@@ -96,23 +100,25 @@ def infer_import_type(all_imports, project_root, contains_pre_installed_packages
 
         # Then, assume that 'base' is a module and 'unknown' is function, variable or any
         # other object in that module.
-        module_path = os.path.join(project_root, base.replace('.', '/') + '.py')
+        module_path = os.path.join(project_root, base.replace(".", "/") + ".py")
         if os.path.exists(module_path):
             modules.append(base)
             continue
 
         # Check if 'unknown' is actually a package or a module.
-        dotted_path = base + '.%s' % unknown
-        package_path = os.path.join(project_root, dotted_path.replace('.', '/'))
-        module_path = os.path.join(project_root, dotted_path.replace('.', '/') + '.py')
+        dotted_path = base + ".%s" % unknown
+        package_path = os.path.join(project_root, dotted_path.replace(".", "/"))
+        module_path = os.path.join(project_root, dotted_path.replace(".", "/") + ".py")
 
-        unknown_is_package = os.path.isdir(package_path) and contains_python_file(package_path)
+        unknown_is_package = os.path.isdir(package_path) and contains_python_file(
+            package_path
+        )
         unknown_is_module = os.path.isfile(module_path)
 
         if unknown_is_package:
             # Assume that for package //foo, there exists rule //foo:foo.
             # TODO: Relax this assumption.
-            dotted_path += '.__init__'
+            dotted_path += ".__init__"
             modules.append(dotted_path)
             continue
 
@@ -122,9 +128,9 @@ def infer_import_type(all_imports, project_root, contains_pre_installed_packages
 
         # Check if 'base' is a package and 'unknown' is part of its "public" interface
         # as declared in __all__ of the __init__.py file.
-        package_path = os.path.join(project_root, base.replace('.', '/'))
+        package_path = os.path.join(project_root, base.replace(".", "/"))
         if os.path.isdir(package_path) and _in_public_interface(package_path, unknown):
-            modules.append(base + '.__init__')
+            modules.append(base + ".__init__")
             continue
 
         # Finally, assume that base is either a pip installable or a local package.
@@ -143,12 +149,13 @@ def _in_public_interface(package_path, unknown):
     Returns:
         public (bool): Whether 'unknown' if part of the public interface.
     """
-    if unknown is None: return True
-    init_path = os.path.join(package_path, '__init__.py')
+    if unknown is None:
+        return True
+    init_path = os.path.join(package_path, "__init__.py")
 
     # Try parsing the __init__.py file of the package.
     try:
-        with open(init_path, 'r') as init_file:
+        with open(init_path, "r") as init_file:
             init_source = init_file.read()
     except IOError:
         return False
@@ -165,7 +172,7 @@ def _in_public_interface(package_path, unknown):
             if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
                 left_side = node.targets[0].id
 
-                if left_side == '__all__':
+                if left_side == "__all__":
                     for element in node.value.elts:
                         if element.s == unknown:
                             return True

@@ -24,7 +24,7 @@ def find_existing_rule(build_file_path, script_filename, bazel_rule_type):
     """
     # Read the existing BUILD file if there is one.
     try:
-        with open(build_file_path, 'r') as build_file:
+        with open(build_file_path, "r") as build_file:
             build_source = build_file.read()
     except IOError:
         return None
@@ -40,13 +40,15 @@ def find_existing_rule(build_file_path, script_filename, bazel_rule_type):
     start = match.start()
 
     # If the match is not the beginning of the rule, then go backwards to the start of the rule.
-    if build_source[start:start + len(rule_identifier)] != rule_identifier:
+    if build_source[start : start + len(rule_identifier)] != rule_identifier:
         start = build_source.rfind(bazel_rule_type.rule_identifier, 0, start)
 
-    assert start != -1, "The start of the Bazel Python rule for %s not located." % script_filename
+    assert start != -1, (
+        "The start of the Bazel Python rule for %s not located." % script_filename
+    )
 
     # Find the rule by matching opening and closing parentheses.
-    rule = parse_enclosed_expression(build_source, start, '(')
+    rule = parse_enclosed_expression(build_source, start, "(")
 
     return rule
 
@@ -67,7 +69,7 @@ def find_existing_test_size(script_path, bazel_rule_type):
 
     script_dir = os.path.dirname(script_path)
     script_filename = os.path.basename(script_path)
-    build_file_path = os.path.join(script_dir, 'BUILD')
+    build_file_path = os.path.join(script_dir, "BUILD")
 
     rule = find_existing_rule(build_file_path, script_filename, bazel_rule_type)
 
@@ -76,7 +78,7 @@ def find_existing_test_size(script_path, bazel_rule_type):
         return None
 
     # Search for the test size.
-    matches = re.findall('size\s*=\s*\"(small|medium|large|enormous)\"', rule)
+    matches = re.findall('size\s*=\s*"(small|medium|large|enormous)"', rule)
 
     num_matches = len(matches)
 
@@ -99,7 +101,7 @@ def find_existing_data_deps(script_path, bazel_rule_type):
     """
     script_dir = os.path.dirname(script_path)
     script_filename = os.path.basename(script_path)
-    build_file_path = os.path.join(script_dir, 'BUILD')
+    build_file_path = os.path.join(script_dir, "BUILD")
 
     rule = find_existing_rule(build_file_path, script_filename, bazel_rule_type)
 
@@ -111,16 +113,16 @@ def find_existing_data_deps(script_path, bazel_rule_type):
     data = None
 
     # Data deps are a list.
-    match = re.search('data\s*=\s*\[', rule)
+    match = re.search("data\s*=\s*\[", rule)
 
     if match:
-        data = parse_enclosed_expression(rule, match.start(), '[')
+        data = parse_enclosed_expression(rule, match.start(), "[")
 
     # Data deps defined by a call to 'glob'.
-    match = re.search('data\s*=\s*glob\(', rule)
+    match = re.search("data\s*=\s*glob\(", rule)
 
     if match:
-        data = parse_enclosed_expression(rule, match.start(), '(')
+        data = parse_enclosed_expression(rule, match.start(), "(")
 
     return data
 
@@ -136,7 +138,7 @@ def get_ignored_rules(build_file_path):
             found or if the Bazel BUILD does not exist.
     """
     try:
-        with open(build_file_path, 'r') as build_file:
+        with open(build_file_path, "r") as build_file:
             build_source = build_file.read()
     except IOError:
         return []
@@ -145,10 +147,10 @@ def get_ignored_rules(build_file_path):
 
     # pazel ignores rules following the tag "# pazel-ignore". Spaces are ignored within the tag but
     # the line must start with #.
-    for match in re.finditer('\n#\s+pazel-ignore\s+', build_source):
+    for match in re.finditer("\n#\s+pazel-ignore\s+", build_source):
         start = match.start()
 
-        rule = parse_enclosed_expression(build_source, start, '(')
+        rule = parse_enclosed_expression(build_source, start, "(")
         ignored_rules.append(rule)
 
     return ignored_rules

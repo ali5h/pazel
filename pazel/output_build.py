@@ -9,11 +9,17 @@ import re
 
 def _append_newline(source):
     """Add newline to a string if it does not end with a newline."""
-    return source if source.endswith('\n') else source + '\n'
+    return source if source.endswith("\n") else source + "\n"
 
 
-def output_build_file(build_source, ignored_rules, output_extension, custom_bazel_rules,
-                      build_file_path, requirement_load):
+def output_build_file(
+    build_source,
+    ignored_rules,
+    output_extension,
+    custom_bazel_rules,
+    build_file_path,
+    requirement_load,
+):
     """Output a BUILD file.
 
     Args:
@@ -24,7 +30,7 @@ def output_build_file(build_source, ignored_rules, output_extension, custom_baze
         build_file_path (str): Path to the BUILD file in which build_source is written.
         requirement_load (str): Statement for loading the 'requirement' rule.
     """
-    header = ''
+    header = ""
 
     if output_extension.header:
         header += _append_newline(output_extension.header)
@@ -35,18 +41,19 @@ def output_build_file(build_source, ignored_rules, output_extension, custom_baze
 
     if ignored_rules:
         for ignored_rule in ignored_rules:
-            if 'load(' in ignored_rule:
+            if "load(" in ignored_rule:
                 ignored_load_statements.append(ignored_rule)
             else:
                 remaining_ignored_rules.append(ignored_rule)
 
     # If the BUILD file contains external packages, add the 'load' statement for installing them.
     # Check that this statement is not in the ignored 'load' statements.
-    ignored_source = '\n'.join(remaining_ignored_rules)
+    ignored_source = "\n".join(remaining_ignored_rules)
 
     if any(['requirement("' in source for source in (build_source, ignored_source)]):
-        in_ignored_load_statements = any(['requirement("' in statement for statement in
-                                          ignored_load_statements])
+        in_ignored_load_statements = any(
+            ['requirement("' in statement for statement in ignored_load_statements]
+        )
 
         if not in_ignored_load_statements:
             header += _append_newline(requirement_load)
@@ -55,8 +62,9 @@ def output_build_file(build_source, ignored_rules, output_extension, custom_baze
     # the load statements are already in the ignored load statements.
     for custom_rule in custom_bazel_rules:
         rule_identifier = custom_rule.rule_identifier
-        in_ignored_load_statements = any([rule_identifier in statement for statement in
-                                          ignored_load_statements])
+        in_ignored_load_statements = any(
+            [rule_identifier in statement for statement in ignored_load_statements]
+        )
 
         if rule_identifier in build_source and not in_ignored_load_statements:
             header += _append_newline(custom_rule.get_load_statement())
@@ -67,23 +75,23 @@ def output_build_file(build_source, ignored_rules, output_extension, custom_baze
 
     # If a header exists, add a newline between it and the rules.
     if header:
-        header += '\n'
+        header += "\n"
 
     output = header + build_source
 
     # Add other ignored rules than load statements to the bottom, separated by newlines.
     if remaining_ignored_rules:
         output = output.rstrip()
-        output += '\n' + '\n'.join(remaining_ignored_rules)
+        output += "\n" + "\n".join(remaining_ignored_rules)
 
     # Add the footer, separated by a newline.
     if output_extension.footer:
-        output += 2*'\n' + _append_newline(output_extension.footer)
+        output += 2 * "\n" + _append_newline(output_extension.footer)
 
-    with open(build_file_path, 'w') as build_file:
+    with open(build_file_path, "w") as build_file:
         output = _append_newline(output)
 
         # Remove possible duplicate newlines (the user may have added such accidentally).
-        output = re.sub('\n\n\n*', '\n\n', output)
+        output = re.sub("\n\n\n*", "\n\n", output)
 
         build_file.write(output)

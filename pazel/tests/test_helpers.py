@@ -30,14 +30,18 @@ class TestHelpers(unittest.TestCase):
 
         more text
         end
-        """.format(expression=expected_expression)
+        """.format(
+            expression=expected_expression
+        )
 
-        start = source.find('py_library')   # Find the index at which the expression starts.
+        start = source.find(
+            "py_library"
+        )  # Find the index at which the expression starts.
 
-        expression = parse_enclosed_expression(source, start, '(')
+        expression = parse_enclosed_expression(source, start, "(")
 
         self.assertEqual(expression, expected_expression)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

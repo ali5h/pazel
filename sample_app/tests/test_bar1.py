@@ -6,11 +6,10 @@ from foo.bar1 import sample
 
 
 class Bar1Test(unittest.TestCase):
-
     def test_sample(self):
         value = sample()
-        self.assertEqual(value, 1.)
+        self.assertEqual(value, 1.0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

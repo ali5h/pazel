@@ -24,12 +24,12 @@ from asd import \
 
         packages, from_imports = get_imports(script_source, ".", ".")
 
-        expected_packages = [('ast', None)]
-        expected_from_imports = [('ast', 'parse'), ('foo', 'bar'), ('asd', 'wasd')]
+        expected_packages = [("ast", None)]
+        expected_from_imports = [("ast", "parse"), ("foo", "bar"), ("asd", "wasd")]
 
         self.assertEqual(packages, expected_packages)
         self.assertEqual(from_imports, expected_from_imports)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

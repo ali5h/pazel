@@ -48,20 +48,22 @@ def parse_pazel_extensions(pazelrc_path):
     """
     # Try parsing the .pazelrc to check that it contains valid Python syntax.
     try:
-        with open(pazelrc_path, 'r') as pazelrc_file:
+        with open(pazelrc_path, "r") as pazelrc_file:
             pazelrc_source = pazelrc_file.read()
             ast.parse(pazelrc_source)
 
-        pazelrc = imp.load_source('pazelrc', pazelrc_path)
+        pazelrc = imp.load_source("pazelrc", pazelrc_path)
     except IOError:
         # The file does not exist. Use a dummy pazelrc that contains nothing.
         pazelrc = dict()
     except SyntaxError:
-        raise SyntaxError("Invalid syntax in %s. Run the file with an interpreter." % pazelrc_path)
+        raise SyntaxError(
+            "Invalid syntax in %s. Run the file with an interpreter." % pazelrc_path
+        )
 
     # Read user-defined header and footer.
-    header = getattr(pazelrc, 'HEADER', '')
-    footer = getattr(pazelrc, 'FOOTER', '')
+    header = getattr(pazelrc, "HEADER", "")
+    footer = getattr(pazelrc, "FOOTER", "")
 
     assert isinstance(header, str), "HEADER must be a string."
     assert isinstance(footer, str), "FOOTER must be a string."
@@ -69,28 +71,39 @@ def parse_pazel_extensions(pazelrc_path):
     output_extension = OutputExtension(header, footer)
 
     # Read user-defined BazelRule classes.
-    custom_bazel_rules = getattr(pazelrc, 'EXTRA_BAZEL_RULES', [])
+    custom_bazel_rules = getattr(pazelrc, "EXTRA_BAZEL_RULES", [])
     assert isinstance(custom_bazel_rules, list), "EXTRA_BAZEL_RULES must be a list."
 
     # Read user-defined ImportInferenceRule classes.
-    custom_import_inference_rules = getattr(pazelrc, 'EXTRA_IMPORT_INFERENCE_RULES', [])
-    assert isinstance(custom_import_inference_rules, list), \
-        "EXTRA_IMPORT_INFERENCE_RULES must be a list."
+    custom_import_inference_rules = getattr(pazelrc, "EXTRA_IMPORT_INFERENCE_RULES", [])
+    assert isinstance(
+        custom_import_inference_rules, list
+    ), "EXTRA_IMPORT_INFERENCE_RULES must be a list."
 
     # Read user-defined mapping from package import names to pip package names.
-    import_name_to_pip_name = getattr(pazelrc, 'EXTRA_IMPORT_NAME_TO_PIP_NAME', dict())
-    assert isinstance(import_name_to_pip_name, dict), \
-        "EXTRA_IMPORT_NAME_TO_PIP_NAME must be a dictionary."
+    import_name_to_pip_name = getattr(pazelrc, "EXTRA_IMPORT_NAME_TO_PIP_NAME", dict())
+    assert isinstance(
+        import_name_to_pip_name, dict
+    ), "EXTRA_IMPORT_NAME_TO_PIP_NAME must be a dictionary."
 
     # Read user-defined mapping from local import names to their Bazel dependencies.
-    local_import_name_to_dep = getattr(pazelrc, 'EXTRA_LOCAL_IMPORT_NAME_TO_DEP', dict())
-    assert isinstance(local_import_name_to_dep, dict), \
-        "EXTRA_LOCAL_IMPORT_NAME_TO_DEP must be a dictionary."
+    local_import_name_to_dep = getattr(
+        pazelrc, "EXTRA_LOCAL_IMPORT_NAME_TO_DEP", dict()
+    )
+    assert isinstance(
+        local_import_name_to_dep, dict
+    ), "EXTRA_LOCAL_IMPORT_NAME_TO_DEP must be a dictionary."
 
     default_requirement_load = 'load("@my_deps//:requirements.bzl", "requirement")'
-    requirement_load = getattr(pazelrc, 'REQUIREMENT', default_requirement_load)
+    requirement_load = getattr(pazelrc, "REQUIREMENT", default_requirement_load)
 
     assert isinstance(requirement_load, str), "REQUIREMENT must be a string."
 
-    return output_extension, custom_bazel_rules, custom_import_inference_rules, \
-        import_name_to_pip_name, local_import_name_to_dep, requirement_load
+    return (
+        output_extension,
+        custom_bazel_rules,
+        custom_import_inference_rules,
+        import_name_to_pip_name,
+        local_import_name_to_dep,
+        requirement_load,
+    )

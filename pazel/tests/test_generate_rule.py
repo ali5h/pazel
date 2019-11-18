@@ -17,11 +17,17 @@ class TestGenerateRule(unittest.TestCase):
         modules = ["abc", "xyz", "foo.bar1", "foo.bar2", "foo.abc.abc", "foo.cba.cba"]
         sorted_modules = sort_module_names(modules)
 
-        expected_sorted_modules = ["abc", "xyz", "foo.bar1", "foo.bar2", "foo.abc.abc",
-                                   "foo.cba.cba"]
+        expected_sorted_modules = [
+            "abc",
+            "xyz",
+            "foo.bar1",
+            "foo.bar2",
+            "foo.abc.abc",
+            "foo.cba.cba",
+        ]
 
         self.assertEqual(sorted_modules, expected_sorted_modules)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
