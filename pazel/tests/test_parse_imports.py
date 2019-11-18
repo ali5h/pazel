@@ -22,7 +22,7 @@ from asd import \
     wasd
 """
 
-        packages, from_imports = get_imports(script_source)
+        packages, from_imports = get_imports(script_source, ".", ".")
 
         expected_packages = [('ast', None)]
         expected_from_imports = [('ast', 'parse'), ('foo', 'bar'), ('asd', 'wasd')]
